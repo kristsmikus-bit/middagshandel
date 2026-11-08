@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Middagshandel</title>
+<meta name="description" content="Handleliste for kollektivet: velg hvor mange som spiser torsdag til søndag og få innkjøpslista.">
+<meta name="theme-color" content="#F3F6F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1411" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Middagshandel">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column (max 640px), sticky week bar on top, fixed action bar at the bottom. */
+:root{
+  --bg:#F3F6F1; --card:#FFFFFF; --fg:#17211B; --muted:#5B6A60; --line:#D7DFD6; --soft:#EBF0EA;
+  --accent:#1F6B47; --accent-fg:#FFFFFF; --accent-soft:#E0EFE5;
+  --warn:#7F5400; --warn-soft:#FBEFD2; --bad:#A33A2A; --bad-soft:#F8E2DD;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F1411; --card:#171E19; --fg:#E6ECE6; --muted:#97A79B; --line:#283229; --soft:#1E2822;
+    --accent:#5CC08E; --accent-fg:#0C1A12; --accent-soft:#1B3327;
+    --warn:#E3B556; --warn-soft:#3A2E10; --bad:#E58070; --bad-soft:#3E1F1A;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 var(--body);-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 120px}
+.top{position:sticky;top:0;z-index:9;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:10px;border-bottom:1px solid var(--line)}
+.brand{font:700 20px/1.1 var(--display);letter-spacing:-.01em;margin:0}
+.brand small{display:block;font:500 11px/1.3 var(--body);color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+h2{font:700 19px/1.2 var(--display);margin:0;text-wrap:balance}
+h3{font:600 12px/1.3 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0}
+p{margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.card > * + *{margin-top:12px}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row > *{min-width:0}
+.btn{font:600 15px/1 var(--body);border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:12px;padding:0 16px;min-height:46px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,button:focus-visible{outline:3px solid var(--accent-soft);outline-offset:1px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:6px 12px;font:600 13px/1 var(--body);border:0;cursor:pointer;white-space:nowrap}
+.chip.plain{background:var(--soft);color:var(--fg)}
+.badge{display:inline-block;border-radius:6px;padding:2px 7px;font:600 11px/1.4 var(--body);letter-spacing:.02em;vertical-align:middle}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.soft{background:var(--soft);color:var(--muted)}
+/* Week card */
+.week{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.week .nav{min-width:46px;padding:0}
+.week .mid{flex:1;text-align:center}
+.week .mid strong{display:block;font:700 22px/1.15 var(--display)}
+.week .mid span{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.menu-line{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:14px}
+.menu-line b{font-weight:600;color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:.06em;align-self:center}
+/* Day steppers */
+.days{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.day{border:1px solid var(--line);border-radius:12px;padding:10px 6px 10px;text-align:center;background:var(--card)}
+.day .lbl{font:600 12px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.day .dish{font-size:11px;color:var(--muted);min-height:2.6em;line-height:1.3;margin-top:4px;overflow:hidden}
+.day input{width:100%;border:0;background:transparent;color:var(--fg);font:700 32px/1.1 var(--display);text-align:center;padding:4px 0;font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield}
+.day input::-webkit-outer-spin-button,.day input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.day .pm{display:flex;gap:6px;justify-content:center}
+.day .pm button{width:44px;height:40px;border-radius:9px;border:1px solid var(--line);background:var(--soft);color:var(--fg);font:600 20px/1 var(--body);cursor:pointer}
+.quick{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.quick .btn{min-height:38px}
+details.flat > summary{cursor:pointer;color:var(--muted);font-size:14px;list-style:none;display:flex;align-items:center;gap:8px}
+details.flat > summary::-webkit-details-marker{display:none}
+details.flat > summary::before{content:"▸";font-size:12px;transition:transform .15s}
+details.flat[open] > summary::before{transform:rotate(90deg)}
+details.flat > *:not(summary){margin-top:10px}
+/* Shopping list */
+.summary{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;color:var(--muted)}
+.summary b{color:var(--fg);font-variant-numeric:tabular-nums}
+.cat{margin-top:14px}
+.cat h3{padding-bottom:6px;border-bottom:1px solid var(--line)}
+.items{list-style:none;margin:0;padding:0}
+.item{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.item:last-child{border-bottom:0}
+.item input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
+.item .buy{font:600 16px/1.3 var(--body);font-variant-numeric:tabular-nums}
+.item .name{color:var(--muted);font-size:14px}
+.item .meta{font-size:12px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.item.done .buy,.item.done .name{text-decoration:line-through;opacity:.55}
+.dishes{display:grid;gap:10px}
+.dish{border:1px solid var(--line);border-radius:12px;padding:12px}
+.dish h4{margin:0;font:600 15px/1.3 var(--body)}
+.dish h4 span{color:var(--muted);font-weight:500}
+.dish ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.dish li b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.basis{font-size:14px}
+/* Settings */
+.field{display:grid;gap:6px}
+.field label{font-size:13px;color:var(--muted)}
+select,input[type=range]{font:500 15px var(--body);color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+input[type=range]{padding:0;border:0;min-height:32px;accent-color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* Action bar */
+.actions{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--card);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.actions .in{max-width:640px;margin:0 auto;display:flex;gap:10px}
+.actions .in .btn{flex:1 1 auto}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font:600 14px var(--body);z-index:20;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+@media (max-width:420px){.two{grid-template-columns:1fr}.day input{font-size:28px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">Middagshandel<small>Innkjøp torsdag til søndag</small></h1>
+    <button class="chip" id="weekChip" type="button" aria-label="Endre uke">Uke –</button>
+  </header>
+
+  <section class="card" id="weekCard">
+    <div class="week">
+      <button class="btn ghost nav" id="prevWeek" type="button" aria-label="Forrige uke">‹</button>
+      <div class="mid">
+        <strong id="weekTitle">Uke –</strong>
+        <span id="weekDates">–</span>
+      </div>
+      <button class="btn ghost nav" id="nextWeek" type="button" aria-label="Neste uke">›</button>
+    </div>
+    <div class="row" style="justify-content:center">
+      <span class="chip" id="menuChip" role="status">Handleliste uke –</span>
+      <button class="btn sm ghost" id="autoWeek" type="button" hidden>Tilbake til denne uka</button>
+    </div>
+    <div class="menu-line" id="menuLine"></div>
+  </section>
+
+  <section class="card" id="countCard">
+    <div>
+      <div class="eyebrow">1 · Antall som spiser</div>
+      <h2>Hvor mange per dag?</h2>
+      <p class="muted small" style="margin-top:4px">Tell kryssene på lista og legg inn antall porsjoner. X+1 teller som 2, «sen» teller som 1.</p>
+    </div>
+    <div class="days" id="days"></div>
+    <div class="quick">
+      <span class="small muted">Sett alle til</span>
+      <button class="btn sm" type="button" data-all="12">12</button>
+      <button class="btn sm" type="button" data-all="14">14</button>
+      <button class="btn sm" type="button" data-all="16">16</button>
+      <button class="btn sm" type="button" data-all="17">17</button>
+    </div>
+  </section>
+
+  <section class="card" id="listCard">
+    <div>
+      <div class="eyebrow">2 · Handleliste</div>
+      <h2 id="listTitle">Handleliste</h2>
+      <div class="summary" id="summary" style="margin-top:6px"></div>
+    </div>
+    <div id="listBody"></div>
+    <div class="basis" id="basisLine"></div>
+    <details class="flat" id="perDish">
+      <summary>Mengder per middag</summary>
+      <div class="dishes" id="dishes"></div>
+    </details>
+    <p class="small muted">Varer som holder seg (ris, poteter, løk, frys, hermetikk) rundes alltid opp til hel pakke, og resten går på lager. For ferskvarer og store poser foreslås én pakke mindre, merket «knapt», når det mangler under <span id="tolText">8 %</span> av behovet.</p>
+  </section>
+
+  <section class="card" id="settingsCard">
+    <details class="flat" id="settingsDetails">
+      <summary>Innstillinger · rotasjon og avrunding</summary>
+      <div class="field">
+        <label for="anchorMenu">Denne uka (<span id="anchorWeekLabel">uke –</span>) handles etter</label>
+        <select id="anchorMenu">
+          <option value="1">Handleliste uke 1 · Bali fiskegryte, kjøttform, pita pizza, chili</option>
+          <option value="2">Handleliste uke 2 · Laks m/mango, burritos, nachos, hvit pizza</option>
+          <option value="3">Handleliste uke 3 · Fiskegryte m/poteter, fajitas, laksepasta, meksikansk</option>
+          <option value="4">Handleliste uke 4 · Torsk m/søtpotet, taco, hamburger, dal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tol">Slingringsmonn for ferskvarer før en ekstra pakke: <b id="tolLabel">8 %</b></label>
+        <input type="range" id="tol" min="0" max="15" step="1" value="8">
+      </div>
+      <p class="small muted">Rotasjonen går over fire uker. Menyene er fra «DF 25/26 – oppdatert februar 2026». Pakkestørrelser som ikke står på lista er antatt (1 kg løk ≈ 7 stk, 500 g laks = 4 fileter, pitabrød 6 pk, kidneybønner 380 g per boks). Tall og avkryssinger lagres bare på denne telefonen.</p>
+      <button class="btn sm ghost" id="resetBtn" type="button">Nullstill antall og avkryssinger</button>
+    </details>
+  </section>
+</div>
+
+<div class="actions">
+  <div class="in">
+    <button class="btn primary" id="shareBtn" type="button" hidden>Del</button>
+    <button class="btn primary" id="copySlack" type="button">Kopier til Slack</button>
+    <button class="btn" id="copyText" type="button" aria-label="Kopier som ren tekst" style="flex:0 0 auto">Tekst</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+// ---------- Menydata (DF 25/26, oppdatert februar 2026). q = mengde for [12, 16, 17] personer. ----------
+const SHOP_DAYS=['tor','fre','lor','son'];
+const DAY_LABEL={tor:'Tor',fre:'Fre',lor:'Lør',son:'Søn'};
+const DAY_FULL={tor:'torsdag',fre:'fredag',lor:'lørdag',son:'søndag'};
+const CATS=[['gront','Frukt og grønt'],['kjott','Kjøtt og fisk, kjøledisk'],['meieri','Meieri og kjølevarer'],['brod','Brød og lefser'],['torr','Tørrvarer og hermetikk'],['frys','Frysevarer'],['basis','Basisvarer, sjekk lager først']];
+const MEASURE=['g','kg','dl','l','ss','ts'];
+const SING={bokser:'boks',poser:'pose',fileter:'filet',lefser:'lefse',potter:'potte',terninger:'terning',biter:'bit',stenger:'stang',stilker:'stilk'};
+
+// Standardverdier per vare (slås sammen med raden i menyen).
+const DEF={
+  rodlok:{n:'Rødløk (1 kg First Price)',u:'stk',cat:'gront',keep:true,pack:7,pu:'pose 1 kg (ca. 7 stk)'},
+  lok:{n:'Løk (First Price)',u:'stk',cat:'gront',keep:true,pack:7,pu:'pose 1 kg (ca. 7 stk)'},
+  gulrot:{n:'Gulrøtter (1 kg First Price)',u:'stk',cat:'gront',keep:true,pack:8,pu:'pose 1 kg (ca. 8 stk)'},
+  hvitlok:{n:'Hvitløk (Bama)',u:'fedd',cat:'gront',keep:true,pack:10,pu:'hel hvitløk (ca. 10 fedd)'},
+  paprika:{n:'Paprika (First Price)',u:'stk',cat:'gront',keep:false},
+  tomat:{n:'Tomater (Bama)',u:'stk',cat:'gront',keep:false},
+  isberg:{n:'Isbergsalat (Bama)',u:'stk',cat:'gront',keep:false},
+  brokkoli:{n:'Brokkoli (Bama)',u:'stk',cat:'gront',keep:false},
+  ruccola:{n:'Ruccola (Bama)',u:'stk',cat:'gront',keep:false},
+  avokado:{n:'Avokado (First Price)',u:'stk',cat:'gront',keep:false},
+  lime:{n:'Lime (Bama)',u:'stk',cat:'gront',keep:true},
+  rodchili:{n:'Rød chili (Bama)',u:'stk',cat:'gront',keep:false},
+  koriander:{n:'Fersk koriander (Bama)',u:'stk',cat:'gront',keep:false},
+  revetost:{n:'Revet ost (600 g First Price)',u:'pk',cat:'meieri',keep:false},
+  skinke:{n:'Kokt skinke (First Price)',u:'pk',cat:'meieri',keep:false},
+  romme:{n:'Rømme (Tine)',u:'stk',cat:'meieri',keep:false},
+  lettromme:{n:'Lettrømme (Tine)',u:'stk',cat:'meieri',keep:false},
+  matflote:{n:'Matfløte (Tine)',u:'dl',cat:'meieri',keep:false,pack:3,pu:'kartong à 3 dl'},
+  smor:{n:'Meierismør',u:'g',cat:'meieri',keep:true,pack:500,pu:'pk à 500 g'},
+  kjottdeig:{n:'Kjøttdeig (400 g First Price)',u:'g',cat:'kjott',keep:false,pack:400,pu:'pk à 400 g'},
+  hakkede:{n:'Hakkede tomater (First Price)',u:'bokser',cat:'torr',keep:true},
+  kidney:{n:'Kidneybønner (First Price)',u:'bokser',cat:'torr',keep:true},
+  mais:{n:'Mais, stor boks (First Price)',u:'bokser',cat:'torr',keep:true},
+  tacosaus:{n:'Tacosaus (First Price)',u:'stk',cat:'torr',keep:true,fixed:true,note:'2 medium + 2 sterk'},
+  tacokrydder:{n:'Tacokrydder (First Price)',u:'poser',cat:'torr',keep:true},
+  tortillachips:{n:'Tortillachips 200 g (First Price)',u:'poser',cat:'torr',keep:true},
+  tortillas:{n:'Tortillas (8 pk First Price)',u:'lefser',cat:'brod',keep:true,pack:8,pu:'pk à 8',note:'2 lefser per person'},
+  dressingmix:{n:'Fransk/gresk dressingmix (Knorr)',u:'poser',cat:'torr',keep:true,fixed:true},
+  ris:{n:'Jasminris (4 kg First Price)',u:'dl',cat:'basis',keep:true,basis:true,note:'Fra 4 kg-sekken'},
+  poteter:{n:'Poteter (2,5 kg First Price)',u:'kg',cat:'gront',keep:true,pack:2.5,pu:'pose à 2,5 kg'},
+  laks:{n:'Laks/ørret (500 g First Price, fryst)',u:'fileter',cat:'frys',keep:true,pack:4,pu:'pk à 500 g (4 fileter)'},
+  buljong:{n:'Grønnsaksbuljong (Maggi)',u:'terninger',cat:'basis',keep:true,basis:true},
+};
+
+const MENU={
+ 1:{
+  tor:{dish:'Bali fiskegryte',basis:['salt','pepper','ris'],items:[
+    {k:'hvitfisk',n:'Hvit fisk, torsk eller sei (First Price, fryst)',q:[1950,2600,3250],u:'g',cat:'frys',keep:true,pack:400,pu:'pk à 400–500 g',note:'Sei 400 g / torsk 500 g, regnet som 400 g'},
+    {k:'baligryte',n:'Bali kyllinggryte XXL (Toro)',q:[3,4,5],u:'pk',cat:'torr',keep:true,note:'Kyllingen byttes ut med torsk'},
+    {k:'matflote',q:[12,16,20]},
+    {k:'ris',q:[12,16,17]}]},
+  fre:{dish:'Kjøttform med potetmoslokk',basis:['First Price løk','hvitløk','salt','pepper'],items:[
+    {k:'svinekjottdeig',n:'Kjøttdeig av svin (300 g First Price / 400 g Gilde)',q:[1500,2000,2125],u:'g',cat:'kjott',keep:false,pack:400,pu:'pk à 400 g',note:'Velg rimeligste ut fra kilopris'},
+    {k:'lok',q:[2,2,3]},
+    {k:'gulrot',q:[6,8,9]},
+    {k:'tomatpure',n:'Tomatpuré, liten boks (Eldorado)',q:[1.5,2,2],u:'bokser',cat:'torr',keep:true},
+    {k:'hakkede',q:[3,4,5]},
+    {k:'mais',q:[1,2,2]},
+    {k:'revetost',q:[0.4,0.55,0.6],note:'6–9 dl revet ost (under én pakke)'},
+    {k:'poteter',q:[3,4,4.25]},
+    {k:'smor',n:'Smør',q:[225,300,320]},
+    {k:'melk',n:'Melk lett (Tine)',q:[6,8,8.5],u:'dl',cat:'meieri',keep:false,pack:10,pu:'kartong à 1 l'}]},
+  lor:{dish:'Pita pizza',basis:['hvitvinseddik (Maille)'],items:[
+    {k:'pitabrod',n:'Pitabrød (Eldorado)',q:[24,32,34],u:'stk',cat:'brod',keep:true,pack:6,pu:'pk (antatt 6 stk)',note:'2 per person. Glutenfritt pitabrød ligger i frysedisken på Kiwi'},
+    {k:'skinke',q:[1,2,2]},
+    {k:'revetost',q:[1,2,2]},
+    {k:'pizzasaus',n:'Pizzasaus (Eldorado)',q:[3,4,4],u:'stk',cat:'torr',keep:true},
+    {k:'mais',n:'Mais (First Price)',q:[2,3,3]},
+    {k:'isberg',q:[1,2,2]},
+    {k:'brokkoli',q:[1,1,1]},
+    {k:'tomat',q:[3,4,4]},
+    {k:'rodlok',q:[1,1,1]},
+    {k:'dressingmix',q:[2,2,2]}]},
+  son:{dish:'Chili con carne (ala Anders)',basis:['salt','pepper','ris'],items:[
+    {k:'kjottdeig',q:[1200,1600,1700]},
+    {k:'rodlok',q:[4,6,7]},
+    {k:'hvitlok',q:[6,8,9]},
+    {k:'gulrot',q:[9,12,13]},
+    {k:'kidney',q:[3,4,5]},
+    {k:'rodchili',n:'Rød chili',q:[3,4,4]},
+    {k:'hakkede',q:[6,8,8]},
+    {k:'romme',q:[3,4,4]},
+    {k:'tortillachips',q:[3,4,4]},
+    {k:'ris',q:[12,16,17]}]}
+ },
+ 2:{
+  tor:{dish:'Ørret/laks med mango- og avokadosalat',basis:[],items:[
+    {k:'laks',q:[12,16,17],note:'Velg billigste av laks/ørret, prisen varierer'},
+    {k:'mango',n:'Mango (First Price)',q:[3,4,4],u:'stk',cat:'gront',keep:false},
+    {k:'avokado',q:[3,4,4]},
+    {k:'paprika',q:[3,4,4]},
+    {k:'varlok',n:'Vårløk (Gartner)',q:[5,7,7],u:'stenger',cat:'gront',keep:false,pack:5,pu:'bunt (ca. 5 stenger)'},
+    {k:'rodlok',q:[1,2,2]},
+    {k:'rodchili',q:[1,2,2]},
+    {k:'sitron',n:'Sitron (First Price)',q:[2,3,3],u:'stk',cat:'gront',keep:true},
+    {k:'ris',q:[12,16,17],note:'Mengde står ikke på lista, regnet 1 dl per person'}]},
+  fre:{dish:'Burritos',basis:[],items:[
+    {k:'kyllingkjottdeig',n:'Kyllingkjøttdeig (400 g First Price)',q:[1200,1600,1700],u:'g',cat:'kjott',keep:false,pack:400,pu:'pk à 400 g'},
+    {k:'rodlok',q:[5.5,8,8]},
+    {k:'paprika',q:[4,5,5.5]},
+    {k:'lime',q:[2,3,3]},
+    {k:'tortillas',q:[24,32,34]},
+    {k:'kidney',q:[4,5,5]},
+    {k:'ris',q:[12,16,17],note:'Lista sier bare «1», regnet 1 dl per person'},
+    {k:'revetost',q:[1,2,2]},
+    {k:'tacosaus',q:[4,4,4]},
+    {k:'ruccola',q:[1,2,2]},
+    {k:'isberg',q:[1,2,2]},
+    {k:'brokkoli',q:[1,1,1]},
+    {k:'tomat',q:[3,4,4]},
+    {k:'dressingmix',q:[1,1,1]},
+    {k:'hvitlok',q:[3,4,4]},
+    {k:'tacokrydder',q:[3,4,4]}]},
+  lor:{dish:'Nachos',basis:[],items:[
+    {k:'kjottdeig',q:[1200,1600,1700],note:'NB! Erstatt kjøtt med bønner dersom pakkestørrelsen ikke går opp med ønsket mengde'},
+    {k:'rodlok',q:[4,5,6]},
+    {k:'hvitlok',q:[6,8,8]},
+    {k:'tacokrydder',q:[3,4,4]},
+    {k:'tortillachips',q:[3,4,4.25],note:'600–850 g'},
+    {k:'kidney',n:'Kidneybønner (Eldorado)',q:[2.4,3.2,3.2],note:'900–1 200 g'},
+    {k:'revetost',q:[1,2,2]},
+    {k:'tacosaus',q:[4,4,4]},
+    {k:'avokado',q:[3,4,4]},
+    {k:'gronnchili',n:'Grønn chili (Bama)',q:[2,3,3],u:'stk',cat:'gront',keep:false},
+    {k:'lettromme',q:[2,3,3]}]},
+  son:{dish:'Stines hvite pizza',basis:[],items:[
+    {k:'cremefraiche',n:'Crème fraîche (Tine)',q:[4,5,5],u:'pk',cat:'meieri',keep:false},
+    {k:'pizzabunn',n:'Pizzabunn (Eldorado)',q:[4,5,5],u:'pk',cat:'brod',keep:true},
+    {k:'rodlok',q:[4,5,5]},
+    {k:'rodchili',q:[1,2,2]},
+    {k:'hvitlok',q:[8,10,10]},
+    {k:'basilikum',n:'Fersk basilikum (Bama)',q:[2,3,3],u:'potter',cat:'gront',keep:false},
+    {k:'revetost',q:[2,3,3]},
+    {k:'skinke',q:[2,4,4]},
+    {k:'pepperoni',n:'Pepperoni (billigst, mest for pengene)',q:[2,4,4],u:'pk',cat:'meieri',keep:false}]}
+ },
+ 3:{
+  tor:{dish:'Fiskegryte med poteter',basis:[],items:[
+    {k:'rodlok',q:[3,4,4]},
+    {k:'gulrot',q:[6,8,8]},
+    {k:'stangselleri',n:'Stangselleri (Bama)',q:[6,8,8],u:'stilker',cat:'gront',keep:false,pack:10,pu:'pk (ca. 10 stilker)'},
+    {k:'matflote',q:[5.5,7.5,8]},
+    {k:'bremykt',n:'Bremykt smør',q:[6,8,8],u:'ss',cat:'basis',keep:true,basis:true,note:'Bare noen spiseskjeer, sjekk om vi har'},
+    {k:'sei',n:'Seifilet (400 g First Price)',q:[750,1000,1100],u:'g',cat:'frys',keep:true,pack:400,pu:'pk à 400 g'},
+    {k:'laksg',n:'Laks- eller ørretfilet (500 g First Price)',q:[750,1000,1100],u:'g',cat:'frys',keep:true,pack:500,pu:'pk à 500 g'},
+    {k:'poteter',q:[2.5,3.2,3.4]},
+    {k:'buljong',q:[3,4,4]}]},
+  fre:{dish:'Fajitas',basis:[],items:[
+    {k:'kyllingfilet',n:'Fryst kyllingfilet (2 kg First Price)',q:[1500,2000,2125],u:'g',cat:'frys',keep:true,big:true,pack:2000,pu:'pose à 2 kg',note:'Stor pose: ved lite avvik foreslås én pose, ikke to'},
+    {k:'rodlok',q:[4.5,6,6.5]},
+    {k:'paprika',q:[3,4,4]},
+    {k:'fajitamix',n:'Fajitas Spice Mix barbeque (Old El Paso)',q:[3,4,4],u:'stk',cat:'torr',keep:true},
+    {k:'tortillas',n:'Tortillas (First Price)',q:[24,32,34],note:'Vanlige FP lefser, 2 per person'},
+    {k:'tacosaus',q:[4,4,4]},
+    {k:'revetost',q:[1,2,2]},
+    {k:'romme',q:[2,3,3]},
+    {k:'ruccola',q:[1,2,2]},
+    {k:'isberg',q:[1,2,2]},
+    {k:'brokkoli',q:[1,2,2]},
+    {k:'tomat',q:[3,4,4]},
+    {k:'dressingmix',q:[2,2,2]}]},
+  lor:{dish:'Laksepasta',basis:['krydder'],items:[
+    {k:'laks',n:'Laksefilet (First Price, fryst)',q:[9,12,13]},
+    {k:'tagliatelle',n:'Tagliatelle',q:[1.2,1.6,1.7],u:'kg',cat:'torr',keep:true,pack:0.5,pu:'pk à 500 g'},
+    {k:'rodlok',q:[4,6,6]},
+    {k:'brokkoli',q:[2,3,3]},
+    {k:'torketbasilikum',n:'Tørket basilikum (Hindu, glass)',q:[1,1,1],u:'glass',cat:'basis',keep:true,basis:true,fixed:true},
+    {k:'lime',q:[1,2,2]},
+    {k:'soltorket',n:'Soltørkede tomater',q:[1,2,2],u:'glass',cat:'torr',keep:true},
+    {k:'matflote',q:[6,8,8]}]},
+  son:{dish:'Meksikansk gryte',basis:[],items:[
+    {k:'meksgryte',n:'Meksikansk gryte familiepakke (Toro)',q:[3,4,4],u:'poser',cat:'torr',keep:true},
+    {k:'kjottdeig',q:[1800,2400,2400],note:'600 g kjøttdeig per pose Toro-gryte'},
+    {k:'lettromme',q:[2,2,2]},
+    {k:'tortillachips',n:'Tortillachips (First Price)',q:[1,2,2]}]}
+ },
+ 4:{
+  tor:{dish:'Torsk med søtpotetpuré',basis:['salt','soyasaus'],items:[
+    {k:'torsk',n:'Torskefilet (500 g First Price)',q:[1200,1600,1700],u:'g',cat:'frys',keep:true,pack:500,pu:'pk à 500 g'},
+    {k:'sotpotet',n:'Søtpotet',q:[6,8,8.5],u:'stk',cat:'gront',keep:true},
+    {k:'smor',q:[450,600,600]},
+    {k:'rodlok',n:'Rødløk',q:[3,5,6]},
+    {k:'rodchili',n:'Rød chili',q:[1.5,2,2]},
+    {k:'ingefar',n:'Ingefær',q:[1,1,1],u:'stk',cat:'gront',keep:true,fixed:true,note:'3–4,5 ts revet'},
+    {k:'lime',n:'Lime',q:[1.5,2,2]},
+    {k:'koriander',n:'Koriander urteplante (Bama)',q:[1,1,1]},
+    {k:'sukkererter',n:'Sukkererter',q:[1,2,2],u:'pk',cat:'gront',keep:false}]},
+  fre:{dish:'Taco',basis:[],items:[
+    {k:'kjottdeig',q:[1200,1600,1700]},
+    {k:'kidney',q:[1,1,2]},
+    {k:'tacokrydder',q:[3,4,4]},
+    {k:'tortillas',q:[24,32,34]},
+    {k:'tacosaus',q:[4,4,4]},
+    {k:'rodlok',n:'Rødløk (First Price)',q:[2.5,4,4.5]},
+    {k:'revetost',q:[1,2,2]},
+    {k:'mais',q:[2,3,3]},
+    {k:'paprika',q:[2,3,3]},
+    {k:'tomat',n:'Tomat (Bama)',q:[5.5,8,8]},
+    {k:'agurk',n:'Agurk (Bama)',q:[1.5,3,3],u:'stk',cat:'gront',keep:false},
+    {k:'isberg',q:[1,2,2]},
+    {k:'lettromme',q:[2,3,3]}]},
+  lor:{dish:'Hamburger med potetbåter',basis:['ketchup','sennep','salt'],items:[
+    {k:'hamburger',n:'Hamburger 1 kg fryst (First Price)',q:[2,2,2],u:'pk',cat:'frys',keep:true,note:'1 burger per person'},
+    {k:'isberg',n:'Isbergsalat',q:[1,1,1]},
+    {k:'tomat',n:'Tomat',q:[3,4,4]},
+    {k:'lok',n:'Løk',q:[2,3,3]},
+    {k:'hamburgerdressing',n:'Hamburgerdressing',q:[1,1,1],u:'stk',cat:'basis',keep:true,basis:true,fixed:true,note:'Sjekk om vi har'},
+    {k:'hamburgerbrod',n:'Hamburgerbrød (First Price)',q:[2,3,3],u:'pk',cat:'brod',keep:true},
+    {k:'sylteagurk',n:'Sylteagurk (First Price)',q:[1,1,1],u:'glass',cat:'torr',keep:true,fixed:true},
+    {k:'sprostekt',n:'Sprøstekt løk (First Price)',q:[1,2,2],u:'poser',cat:'torr',keep:true},
+    {k:'poteter',q:[2,2.6,2.8]}]},
+  son:{dish:'Dal, linsegryte',basis:['olivenolje','gurkemeie','karri','garam masala'],items:[
+    {k:'lok',n:'Løk',q:[3,4,4]},
+    {k:'hvitlok',n:'Hvitløk',q:[12,16,17]},
+    {k:'ingefarbiter',n:'Fersk ingefær, tommelstore biter',q:[3,4,4],u:'biter',cat:'gront',keep:true,note:'Én stor rot holder'},
+    {k:'linser',n:'Røde tørre linser',q:[12,16,17],u:'dl',cat:'torr',keep:true,pack:6,pu:'pk à 500 g (ca. 6 dl)'},
+    {k:'buljong',n:'Grønnsaksbuljong',q:[6,8,8]},
+    {k:'hakkede',q:[3,4,4]},
+    {k:'lime',n:'Lime',q:[3,4,4]},
+    {k:'ris',q:[9,12,13]},
+    {k:'koriander',n:'Fersk koriander',q:[1,2,2]}]}
+ }
+};
+
+// ---------- Tilstand ----------
+const DEFAULT_STATE={
+  anchor:{monday:'2026-11-09',menu:3},   // bekreftet 8. nov 2026: kalenderuke 46 = fiskegryte m/poteter = handleliste uke 3
+  anchorVersion:2,                        // økes når standard-forankringen endres, så gamle lagrede verdier byttes ut
+  tol:0.08,
+  offset:0,
+  counts:{tor:12,fre:12,lor:12,son:12},
+  ticks:{}
+};
+let state=load();
+function load(){try{const s=JSON.parse(localStorage.getItem('mh_state')||'null');if(s&&s.anchor&&s.counts){const m=Object.assign({},DEFAULT_STATE,s,{offset:0});m.counts=Object.assign({},DEFAULT_STATE.counts,s.counts);if(s.anchorVersion!==DEFAULT_STATE.anchorVersion){m.anchor=DEFAULT_STATE.anchor;m.anchorVersion=DEFAULT_STATE.anchorVersion;}return m;}}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_STATE));}
+function save(){try{localStorage.setItem('mh_state',JSON.stringify(state));}catch(e){}}
+
+// ---------- Datoer ----------
+const DAY_MS=86400000;
+function mondayOf(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return {year:t.getUTCFullYear(),week:Math.ceil((((t-y0)/DAY_MS)+1)/7)};}
+function parseISODate(s){const p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function isoDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+const MONTHS=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+function fmtDay(d){return d.getDate()+'. '+MONTHS[d.getMonth()];}
+function autoTargetMonday(){const now=new Date();const dow=now.getDay();const m=mondayOf(now);return (dow===0||dow>=5)?addDays(m,7):m;}  // fre–søn: planlegg neste uke
+function targetMonday(){return addDays(autoTargetMonday(),7*state.offset);}
+function weeksBetween(a,b){return Math.round((b-a)/(7*DAY_MS));}
+function menuWeekFor(monday){const a=parseISODate(state.anchor.monday);const n=weeksBetween(mondayOf(a),monday);return (((state.anchor.menu-1+n)%4)+4)%4+1;}
+
+// ---------- Beregning ----------
+function scale(q,n){if(!Array.isArray(q))q=[q,q,q];if(n<=0)return 0;if(n<=12)return q[0]*n/12;if(n<=16)return q[0]+(q[1]-q[0])*(n-12)/4;if(n<=17)return q[1]+(q[2]-q[1])*(n-16);return q[2]*n/17;}
+function buildList(menuWeek,counts,tol){
+  const wk=MENU[menuWeek];const merged=new Map();const dishes=[];const basis=[];
+  for(const d of SHOP_DAYS){
+    const n=Math.max(0,Math.round(Number(counts[d])||0));const day=wk[d];
+    const entry={day:d,dish:day.dish,n,rows:[]};dishes.push(entry);
+    if(n<=0)continue;
+    for(const b of (day.basis||[]))if(!basis.includes(b))basis.push(b);
+    for(const raw of day.items){
+      const it=Object.assign({},DEF[raw.k]||{},raw);
+      const need=it.fixed?(Array.isArray(it.q)?it.q[0]:it.q):scale(it.q,n);
+      entry.rows.push({it,need});
+      let m=merged.get(it.k);
+      if(!m){m={k:it.k,n:it.n,u:it.u||'stk',cat:it.cat||'torr',keep:!!it.keep,big:!!it.big,basis:!!it.basis,pack:it.pack,pu:it.pu,notes:[],parts:[],total:0};merged.set(it.k,m);}
+      m.total+=need;m.parts.push({day:d,need});
+      if(it.note&&!m.notes.includes(it.note))m.notes.push(it.note);
+      if(it.pack&&!m.pack){m.pack=it.pack;m.pu=it.pu;}
+    }
+  }
+  const rows=[...merged.values()].map(m=>finalize(m,tol));
+  const order=CATS.map(c=>c[0]);
+  rows.sort((a,b)=>order.indexOf(a.cat)-order.indexOf(b.cat)||a.n.localeCompare(b.n,'nb'));
+  return {dishes,rows,basis};
+}
+function finalize(m,tol){
+  const countable=!MEASURE.includes(m.u);
+  let buy=null,buyText='',knapt=false,shortPct=0,covers=0;
+  const x=m.pack?m.total/m.pack:(countable?m.total:null);
+  if(x!=null&&m.total>0){
+    const strict=Math.ceil(x-1e-9);
+    const t=(!m.keep||m.big)?tol:0;   // holdbare varer rundes alltid opp; ferskvarer og store pakker får slingringsmonn
+    buy=Math.max(1,Math.ceil(x*(1-t)-1e-9));
+    knapt=buy<strict;
+    covers=m.pack?buy*m.pack:buy;
+    shortPct=knapt?Math.round((1-covers/m.total)*100):0;
+  }
+  if(m.pack&&buy!=null){
+    buyText=buy+' × '+m.pu;
+    if(!countable||m.pack>1)buyText+=' (= '+fmtQty(covers,m.u)+')';
+  }else if(countable&&buy!=null){
+    buyText=buy+' '+unitName(m.u,buy);
+  }else{
+    buyText=fmtQty(m.total,m.u);
+  }
+  const over=(m.pack&&buy!=null)?covers-m.total:0;
+  const restKeeps=m.keep&&m.pack&&over>0.15*m.total;
+  return Object.assign(m,{buy,buyText,knapt,shortPct,countable,restKeeps,needText:'trenger '+fmtQty(m.total,m.u)});
+}
+function unitName(u,n){if(n===1&&SING[u])return SING[u];return u;}
+function fmtNum(x,dec){const f=Number(x).toFixed(dec);const parts=f.split('.');let i=parts[0],fr=parts[1];i=i.replace(/\B(?=(\d{3})+(?!\d))/g,' ');if(fr)fr=fr.replace(/0+$/,'');return fr?i+','+fr:i;}
+function fmtQty(x,u){
+  if(u==='g'&&x>=1000)return fmtNum(x/1000,2)+' kg';
+  if(u==='kg')return fmtNum(x,2)+' kg';
+  if(u==='g')return fmtNum(Math.round(x),0)+' g';
+  if(MEASURE.includes(u))return fmtNum(x,1)+' '+u;
+  const r=Math.round(x*10)/10;
+  return fmtNum(r,1)+' '+unitName(u,r);
+}
+
+// ---------- Visning ----------
+const $=id=>document.getElementById(id);
+function el(tag,attrs,children){const e=document.createElement(tag);if(attrs)for(const k in attrs){if(k==='class')e.className=attrs[k];else if(k==='text')e.textContent=attrs[k];else if(k.startsWith('on'))e.addEventListener(k.slice(2),attrs[k]);else if(attrs[k]!==false&&attrs[k]!=null)e.setAttribute(k,attrs[k]);}(children||[]).forEach(c=>{if(c==null)return;e.append(typeof c==='string'?document.createTextNode(c):c);});return e;}
+
+let current=null; // {monday, menuWeek, list}
+function renderAll(){renderWeek();renderDays();renderList();renderSettings();}
+
+function renderWeek(){
+  const mon=targetMonday();const iw=isoWeek(mon);const menu=menuWeekFor(mon);
+  const thu=addDays(mon,3),sun=addDays(mon,6);
+  $('weekTitle').textContent='Uke '+iw.week;
+  $('weekDates').textContent='Handler for tor '+fmtDay(thu)+' – søn '+fmtDay(sun);
+  $('weekChip').textContent='Uke '+iw.week+' · liste '+menu;
+  $('menuChip').textContent='Handleliste uke '+menu;
+  $('autoWeek').hidden=state.offset===0;
+  const ml=$('menuLine');ml.replaceChildren();
+  for(const d of SHOP_DAYS){ml.append(el('b',{text:DAY_LABEL[d]}),el('span',{text:MENU[menu][d].dish}));}
+  current={monday:mon,menuWeek:menu};
+}
+
+function renderDays(){
+  const c=state.counts;const menu=current.menuWeek;
+  const main=$('days');main.replaceChildren();
+  for(const d of SHOP_DAYS)main.append(dayCell(d,c[d],MENU[menu][d].dish));
+}
+function dayCell(d,val,dish){
+  const cell=el('div',{class:'day'});
+  cell.append(el('div',{class:'lbl',text:DAY_LABEL[d]}));
+  cell.append(el('div',{class:'dish',text:dish||''}));
+  const inp=el('input',{id:'cnt_'+d,type:'number',inputmode:'numeric',min:'0',max:'60',value:String(val==null?0:val),'aria-label':'Antall porsjoner '+DAY_FULL[d]});
+  inp.addEventListener('change',()=>setCount(d,inp.value));
+  inp.addEventListener('input',()=>{if(inp.value!=='')setCount(d,inp.value,true);});
+  inp.addEventListener('focus',()=>inp.select());
+  cell.append(inp);
+  const pm=el('div',{class:'pm'});
+  pm.append(el('button',{type:'button','aria-label':'Én færre '+DAY_FULL[d],onclick:()=>setCount(d,(Number(state.counts[d])||0)-1)},['−']));
+  pm.append(el('button',{type:'button','aria-label':'Én flere '+DAY_FULL[d],onclick:()=>setCount(d,(Number(state.counts[d])||0)+1)},['+']));
+  cell.append(pm);
+  return cell;
+}
+function setCount(d,v,silent){
+  let n=Math.round(Number(v));if(!Number.isFinite(n))n=0;n=Math.max(0,Math.min(60,n));
+  state.counts[d]=n;save();
+  if(silent){renderList();return;}
+  renderDays();renderList();
+}
+
+function renderList(){
+  const menu=current.menuWeek;const list=buildList(menu,state.counts,state.tol);current.list=list;
+  const iw=isoWeek(current.monday);
+  $('listTitle').textContent='Handleliste uke '+menu+' · kalenderuke '+iw.week;
+  const sum=$('summary');sum.replaceChildren();
+  for(const d of list.dishes)sum.append(el('span',{},[DAY_LABEL[d.day]+' ',el('b',{text:String(d.n)})]));
+  sum.append(el('span',{},[el('b',{text:String(list.rows.length)}),' varer']));
+  const body=$('listBody');body.replaceChildren();
+  const ticks=state.ticks[isoDate(current.monday)]||{};
+  if(!list.rows.length){body.append(el('p',{class:'muted',text:'Ingen porsjoner registrert for torsdag til søndag.'}));}
+  for(const [cat,label] of CATS){
+    const rows=list.rows.filter(r=>r.cat===cat);if(!rows.length)continue;
+    const sec=el('div',{class:'cat'});sec.append(el('h3',{text:label}));
+    const ul=el('ul',{class:'items'});
+    for(const r of rows){
+      const done=!!ticks[r.k];
+      const li=el('li',{class:'item'+(done?' done':'')});
+      const cb=el('input',{id:'tick_'+r.k,type:'checkbox','aria-label':'Handlet: '+r.n});cb.checked=done;
+      cb.addEventListener('change',()=>{const key=isoDate(current.monday);state.ticks[key]=state.ticks[key]||{};if(cb.checked)state.ticks[key][r.k]=true;else delete state.ticks[key][r.k];save();li.classList.toggle('done',cb.checked);});
+      const txt=el('label',{for:'tick_'+r.k});
+      txt.append(el('div',{class:'buy',text:r.buyText}),el('div',{class:'name',text:r.n}));
+      const meta=el('div',{class:'meta'});
+      if(r.pack||r.countable)meta.append(el('span',{text:r.needText}));
+      if(r.parts.length>1)meta.append(el('span',{text:r.parts.map(p=>DAY_LABEL[p.day].toLowerCase()+' '+fmtQty(p.need,r.u)).join(' + ')}));
+      if(r.knapt)meta.append(el('span',{class:'badge warn',text:'knapt, −'+r.shortPct+' %'}));
+      if(r.basis)meta.append(el('span',{class:'badge soft',text:'sjekk lager'}));
+      else if(r.restKeeps)meta.append(el('span',{class:'badge soft',text:'resten holder seg'}));
+      r.notes.forEach(n=>meta.append(el('span',{class:'small',text:n})));
+      txt.append(meta);
+      li.append(cb,txt);ul.append(li);
+    }
+    sec.append(ul);body.append(sec);
+  }
+  const bl=$('basisLine');bl.replaceChildren();
+  if(list.basis.length)bl.append(el('b',{text:'Sjekk basisvarer: '}),document.createTextNode(list.basis.join(', ')));
+  const dish=$('dishes');dish.replaceChildren();
+  for(const d of list.dishes){
+    const box=el('div',{class:'dish'});
+    box.append(el('h4',{},[DAY_LABEL[d.day]+' · '+d.dish+' ',el('span',{text:d.n+' pers'})]));
+    if(d.rows.length){const ul=el('ul');d.rows.forEach(r=>ul.append(el('li',{},[el('b',{text:fmtQty(r.need,r.it.u||'stk')}),' '+r.it.n])));box.append(ul);}
+    else box.append(el('p',{class:'small muted',text:'Ingen spiser, hopper over.'}));
+    dish.append(box);
+  }
+  $('tolText').textContent=Math.round(state.tol*100)+' %';
+}
+
+function renderSettings(){
+  const nowMon=mondayOf(new Date());const iw=isoWeek(nowMon);
+  $('anchorWeekLabel').textContent='uke '+iw.week;
+  $('anchorMenu').value=String(menuWeekFor(nowMon));
+  $('tol').value=String(Math.round(state.tol*100));
+  $('tolLabel').textContent=Math.round(state.tol*100)+' %';
+}
+function applyAnchorFromSettings(){
+  const nowMon=mondayOf(new Date());
+  state.anchor={monday:isoDate(nowMon),menu:Number($('anchorMenu').value)};
+  save();renderAll();toast('Rotasjonen er oppdatert');
+}
+
+// ---------- Eksport til Slack / tekst ----------
+function exportText(slack){
+  const L=current.list;const iw=isoWeek(current.monday);const thu=addDays(current.monday,3),sun=addDays(current.monday,6);
+  const B=s=>slack?'*'+s+'*':s.toUpperCase();
+  const I=s=>slack?'_'+s+'_':s;
+  const out=[];
+  out.push(B('Handleliste tor–søn · uke '+iw.week+' ('+fmtDay(thu)+'–'+fmtDay(sun)+') · handleliste uke '+current.menuWeek));
+  out.push('Porsjoner: '+L.dishes.map(d=>DAY_LABEL[d.day].toLowerCase()+' '+d.n).join(' · '));
+  out.push('Middager: '+L.dishes.map(d=>DAY_LABEL[d.day].toLowerCase()+' '+d.dish).join(' · '));
+  for(const [cat,label] of CATS){
+    const rows=L.rows.filter(r=>r.cat===cat);if(!rows.length)continue;
+    out.push('');out.push(B(label));
+    for(const r of rows){
+      let line='• '+r.buyText+' – '+r.n;
+      const extra=[];
+      if(r.pack||r.countable)extra.push(r.needText);
+      if(r.knapt)extra.push('knapt, −'+r.shortPct+' %');
+      if(r.basis)extra.push('sjekk lager');
+      r.notes.forEach(n=>extra.push(n));
+      if(extra.length)line+=' '+I('('+extra.join('; ')+')');
+      out.push(line);
+    }
+  }
+  if(L.basis.length){out.push('');out.push(B('Sjekk basisvarer:')+' '+L.basis.join(', '));}
+  return out.join('\n');
+}
+async function copy(text,msg){
+  try{await navigator.clipboard.writeText(text);toast(msg);}
+  catch(e){
+    const ta=el('textarea',{style:'position:fixed;left:-9999px;top:0'});ta.value=text;document.body.append(ta);ta.select();
+    let ok=false;try{ok=document.execCommand('copy');}catch(_){}
+    ta.remove();toast(ok?msg:'Kunne ikke kopiere. Marker teksten manuelt.');
+  }
+}
+let toastTimer=null;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ---------- Knapper ----------
+$('prevWeek').addEventListener('click',()=>{state.offset--;renderAll();});
+$('nextWeek').addEventListener('click',()=>{state.offset++;renderAll();});
+$('autoWeek').addEventListener('click',()=>{state.offset=0;renderAll();});
+$('weekChip').addEventListener('click',()=>{$('settingsDetails').open=true;$('settingsCard').scrollIntoView({behavior:'smooth',block:'start'});});
+$('anchorMenu').addEventListener('change',applyAnchorFromSettings);
+$('tol').addEventListener('input',()=>{state.tol=Number($('tol').value)/100;$('tolLabel').textContent=Math.round(state.tol*100)+' %';save();renderList();});
+$('resetBtn').addEventListener('click',()=>{state.counts=Object.assign({},DEFAULT_STATE.counts);state.ticks={};save();renderAll();toast('Nullstilt');});
+document.querySelectorAll('[data-all]').forEach(b=>b.addEventListener('click',()=>{const n=Number(b.getAttribute('data-all'));for(const d of SHOP_DAYS)state.counts[d]=n;save();renderDays();renderList();}));
+$('copySlack').addEventListener('click',()=>copy(exportText(true),'Kopiert. Lim inn i Slack.'));
+$('copyText').addEventListener('click',()=>copy(exportText(false),'Kopiert som tekst.'));
+if(navigator.share){
+  const sb=$('shareBtn');sb.hidden=false;
+  sb.addEventListener('click',async()=>{try{await navigator.share({title:'Handleliste',text:exportText(true)});}catch(e){/* avbrutt */}});
+}
+
+renderAll();
+
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+})();
+</script>
+</body>
+</html>
